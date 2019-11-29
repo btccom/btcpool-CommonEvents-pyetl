@@ -1,8 +1,9 @@
-FROM ubuntu:latest
+FROM ubuntu:16.04
 MAINTAINER John Omernik Mandolinplayer@gmail.com
 
+ARG APT_MIRROR_URL=http://mirror.0x.sg/ubuntu/
 
-RUN apt-get update && apt-get install -y git wget syslinux libevent-pthreads-2.0-5 nano  && apt-get clean && apt-get autoremove -y
+RUN sed -i "s#http://archive.ubuntu.com/ubuntu/#${APT_MIRROR_URL}#g" /etc/apt/sources.list && apt-get update && apt-get install -y git wget syslinux libevent-pthreads-2.0-5 nano  && apt-get clean && apt-get autoremove -y
 
 # LLVM String Added no matter what is selected for output
 RUN wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
@@ -28,7 +29,7 @@ ENV LD_PRELOAD=/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
 
 
 
-RUN wget http://package.mapr.com/releases/v5.2.1/ubuntu//mapr-client-5.2.1.42646.GA-1.amd64.deb && wget http://package.mapr.com/releases/MEP/MEP-3.0/ubuntu//mapr-librdkafka_0.9.1.201703301726_all.deb && dpkg -i mapr-client-5.2.1.42646.GA-1.amd64.deb && dpkg -i mapr-librdkafka_0.9.1.201703301726_all.deb && rm mapr-client-5.2.1.42646.GA-1.amd64.deb && rm mapr-librdkafka_0.9.1.201703301726_all.deb && ldconfig
+RUN wget http://package.mapr.com/releases/v5.2.1/ubuntu/mapr-client-5.2.1.42646.GA-1.amd64.deb && wget http://package.mapr.com/releases/MEP/MEP-3.0/ubuntu/mapr-librdkafka_0.9.1.201711161538_all.deb && dpkg -i mapr-client-5.2.1.42646.GA-1.amd64.deb && dpkg -i mapr-librdkafka_0.9.1.201711161538_all.deb && rm mapr-client-5.2.1.42646.GA-1.amd64.deb && rm mapr-librdkafka_0.9.1.201711161538_all.deb && ldconfig
 
 
 RUN git clone https://github.com/mkmoisen/pychbase.git && cd pychbase && sed -i "s/library_dirs=library_dirs,/library_dirs=library_dirs,extra_compile_args=['-fpermissive'],/g" setup.py && python setup.py install && cd .. && rm -rf pychbase
