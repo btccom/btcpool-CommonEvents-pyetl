@@ -4,6 +4,7 @@ import json
 import re
 import time
 import datetime
+import calendar
 import shutil
 import gzip
 import os
@@ -12,17 +13,11 @@ import random
 
 
 if sys.version_info > (3,):
-    try:
-        import pandas as pd
-        from fastparquet import write as parqwrite
-        from fastparquet import ParquetFile
-    except:
-        print("Attempting to import pands or fastparquet failed - Parquet writer WILL fail - are you sure your container has this support??")
+    import pandas as pd
+    from fastparquet import write as parqwrite
+    from fastparquet import ParquetFile
 else:
-    try:
-        from pychbase import Connection, Table, Batch
-    except:
-        print("Attempting to import pychbase failed - MaprDB writer WILL fail - ar you sure your contianer has this support??")
+    from pychbase import Connection, Table, Batch
 
 
 # Variables - Should be setable by arguments at some point
@@ -30,7 +25,7 @@ else:
 envvars = {}
 # envars['var'] = ['default', 'True/False Required', 'str/int']
 # What type of destination will this instance be sending to
-envvars['dest_type'] = ['', True, 'str'] # mapdb, parq, json
+envvars['dest_type'] = ['', True, 'str'] # mapdb, parquet, json
 
 #Kafka/Streams
 envvars['zookeepers'] = ['', False, 'str']
@@ -50,6 +45,8 @@ envvars['derived_dst'] = ['', False, 'str']  # The field to put in the dest
 envvars['derived_start'] = [0, False, 'int'] # The position to start
 envvars['derived_end'] = [0, False, 'int']   # The position to end
 envvars['derived_req'] = [0, False, 'int']   # Fail if the addition/conversation fails
+envvars['costom_transform'] = ['', False, 'str']   # costom transform for the JSON
+
 
 #Loop Control
 envvars['rowmax'] = [50, False, 'int']
@@ -59,7 +56,7 @@ envvars['sizemax'] = [256000, False, 'int']
 # Parquet Options
 envvars['parq_offsets'] = [50000000, False, 'int']
 envvars['parq_compress'] = ['SNAPPY', False, 'str']
-envvars['parq_has_nulls'] = [1, False, 'bool']
+envvars['parq_has_nulls'] = [False, False, 'bool']
 envvars['parq_merge_file'] = [0, False, 'int']
 
 # JSON Options
@@ -116,7 +113,7 @@ def main():
         sys.exit(1)
 
 
-    if loadedenv['dest_type'] == 'parq':
+    if loadedenv['dest_type'] == 'parquet':
         if not sys.version_info > (3,):
             print("Python 2 is not supported for Parquet Writer, please use Python 3")
             sys.exit(1)
@@ -169,8 +166,7 @@ def main():
             sys.exit(1)
         mybs = bootstrap_from_zk(loadedenv['zookeepers'], loadedenv['kafka_id'])
     else:
-        if loadedenv['bootstrap_brokers'] == 'mapr':
-            mybs = ''
+        mybs = loadedenv['bootstrap_brokers']
 
     if loadedenv['debug'] >= 1:
         print (mybs)
@@ -294,10 +290,10 @@ def dumpPart(pledger, curtime):
             removekeys.append(x)
 
                 # If merge_file is 1 then we read in the whole parquet file and output it in one go to eliminate all the row groups from appending
-            if loadedenv['dest_type'] == 'parq':
+            if loadedenv['dest_type'] == 'parquet':
                 if loadedenv['parq_merge_file'] == 1:
                     if loadedenv['debug'] >= 1:
-                       print("%s Merging parqfile into to new parq file" % (datetime.datetime.now()))
+                       print("%s Merging parqfile into to new parquet file" % (datetime.datetime.now()))
                     inparq = ParquetFile(new_file)
                     inparqdf = inparq.to_pandas()
                     tmp_file = loadedenv['tmp_part'] + "/" + new_file_name
@@ -312,7 +308,7 @@ def dumpPart(pledger, curtime):
 
 def writeFile(dataar, pledger, curfile, curtime, rowcnt, sizecnt, timedelta):
     parts = []
-    if loadedenv['dest_type'] == 'parq':
+    if loadedenv['dest_type'] == 'parquet':
         parqdf = pd.DataFrame.from_records([l for l in dataar])
         parts = parqdf[loadedenv['file_partition_field']].unique()
         if len(parts) == 0:
@@ -335,7 +331,7 @@ def writeFile(dataar, pledger, curfile, curtime, rowcnt, sizecnt, timedelta):
         print("%s Write Data batch to %s at %s records - Size: %s - Seconds since last write: %s - Partitions in this batch: %s" % (datetime.datetime.now(), curfile, rowcnt, sizecnt, timedelta, parts))
 
     for part in parts:
-        if loadedenv['dest_type'] == 'parq':
+        if loadedenv['dest_type'] == 'parquet':
             partdf =  parqdf[parqdf[loadedenv['file_partition_field']] == part]
         else:
             partar = []
@@ -364,7 +360,7 @@ def writeFile(dataar, pledger, curfile, curtime, rowcnt, sizecnt, timedelta):
         if loadedenv['debug'] >= 1:
             print("----- Writing partition %s to %s" % (part, final_file))
 
-        if loadedenv['dest_type'] == 'parq':
+        if loadedenv['dest_type'] == 'parquet':
             if not os.path.exists(final_file):
                 parqwrite(final_file, partdf, compression=loadedenv['parq_compress'], row_group_offsets=loadedenv['parq_offsets'], has_nulls=loadedenv['parq_has_nulls'])
             else:
@@ -449,9 +445,20 @@ def returnJSONRecord(m):
                 print("Exiting due to derived_req being set")
                 sys.exit(1)
 
+    if loadedenv['costom_transform'] == "BPoolCommEnvs":
+        retval = costomTransformBPoolCommEnvs(retval)
 
     return retval, failedjson
 
+def costomTransformBPoolCommEnvs(obj):
+    obj = {**obj, **obj['content']}
+    t = datetime.datetime.strptime(obj['created_at'], '%Y-%m-%d %H:%M:%S').timetuple()
+    day = t.tm_year * 10000 + t.tm_mon * 100 + t.tm_mday
+    hour = t.tm_hour
+    obj['timestamp'] = calendar.timegm(t)
+    obj['partition'] = 'day=%d/hour=%02d' % (day, hour)
+    del obj['created_at'], obj['content']
+    return obj
 
 def printJSONFail(m, val):
     print ("JSON Error - Debug - Attempting to print")

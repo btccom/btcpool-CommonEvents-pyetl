@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The destination of the data, values are maprdb, json, or parq
+# The destination of the data, values are maprdb, json, or parquet
 export DEST_TYPE="json"
 
 # Dealing with bad data
@@ -86,7 +86,7 @@ export JSON_GZ_COMPRESS="1"
 # Run Py ETL!
 if [ "$DEST_TYPE" == "maprdb" ]; then
     # Mapr DB requires Python 2
-    python -u /app/code/pyetl.py
+    python -u ./pyetl.py
 else
-    python3 -u /app/code/pyetl.py
+    python3 -u ./pyetl.py
 fi
