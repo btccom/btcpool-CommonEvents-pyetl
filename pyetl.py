@@ -457,6 +457,8 @@ def costomTransformBPoolCommEnvs(obj):
     hour = t.tm_hour
     obj['timestamp'] = calendar.timegm(t)
     obj['partition'] = 'day=%d/hour=%02d' % (day, hour)
+    if 'ext_user_id' not in obj.keys():
+        obj['ext_user_id'] = 0
     del obj['created_at'], obj['content']
     return obj
 
