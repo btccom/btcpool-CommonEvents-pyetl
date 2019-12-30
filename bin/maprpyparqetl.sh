@@ -59,7 +59,7 @@ export TIMEMAX=10  # seconds since last write to force a write # The number of s
 export FILE_PREFIX=data
 
 # The base directory for the table (Posix only at this time, for MapR /mapr/cluster/path/to/data)
-export FILE_TABLE_BASE="./data"
+export FILE_TABLE_BASE="./data/parquet"
 # Files of this size will cause the current file to be closed, and new one started
 export FILE_MAXSIZE="128000000"
 # This is the value to use as a uniq identifier so when you have multiple writes writing to the same partition, they each get their own file. HOSTNAME in docker containers works well for this
@@ -71,7 +71,7 @@ export FILE_PARTMAXAGE="600"
 # If the partition field can not be found, use this instead
 export FILE_UNKNOWNPART="unknown"
 # The diretory used for tmp files (in not write live setups, .something works because tools like drill don't query directory starting with .)
-export FILE_TMP_PART_DIR="../data.tmp"
+export FILE_TMP_PART_DIR="../tmp"
 # Should we write directly to the live directory? Usually not, this causes things querying the data to freak out.
 export FILE_WRITE_LIVE="0"
 

@@ -11,7 +11,7 @@ docker build -t pyetl .
 ## Run
 
 ```
-docker run -v $PWD/data:/app/data -v $PWD/data.tmp:/app/data.tmp --rm --network=host -it -e BOOTSTRAP_BROKERS=127.0.0.1:9092 -e GROUP_ID=pyetl_commenv_1 -e TOPIC=BtcCommonEvents pyetl
+docker run -v $PWD/data:/app/data --rm --network=host -it -e BOOTSTRAP_BROKERS=127.0.0.1:9092 -e GROUP_ID=pyetl_commenv_1 -e TOPIC=BtcCommonEvents pyetl
 ```
 
 ## Old Docs
