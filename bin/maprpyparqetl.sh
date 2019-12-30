@@ -67,7 +67,9 @@ export FILE_UNIQ_ENV="FILE_PREFIX"
 # The field in the src data that will be used for partitions
 export FILE_PARTITION_FIELD="partition"
 # If a partition has not been written to in this many seconds, close the file and move to the live data (so it can be queried)
-export FILE_PARTMAXAGE="600"
+if [ "x$FILE_PARTMAXAGE" = "x" ]; then
+    export FILE_PARTMAXAGE="600"
+fi
 # If the partition field can not be found, use this instead
 export FILE_UNKNOWNPART="unknown"
 # The diretory used for tmp files (in not write live setups, .something works because tools like drill don't query directory starting with .)

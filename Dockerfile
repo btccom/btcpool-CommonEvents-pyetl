@@ -11,7 +11,7 @@ RUN sed -i "s#http://archive.ubuntu.com/ubuntu/#${APT_MIRROR_URL}#g" /etc/apt/so
     && apt-get clean \
     && apt-get autoremove -y
 
-RUN pip3 install brotli kazoo requests numpy pandas cython numba fastparquet
+RUN pip3 install brotli kazoo requests numpy pandas cython colorama numba fastparquet
 
 ADD pyetl.py /app/
 ADD bin/ /app/bin/
