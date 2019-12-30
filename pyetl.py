@@ -10,6 +10,7 @@ import gzip
 import os
 import sys
 import random
+import struct
 
 
 if sys.version_info > (3,):
@@ -452,14 +453,21 @@ def returnJSONRecord(m):
 
 def costomTransformBPoolCommEnvs(obj):
     obj = {**obj, **obj['content']}
+
     t = datetime.datetime.strptime(obj['created_at'], '%Y-%m-%d %H:%M:%S').timetuple()
     day = t.tm_year * 10000 + t.tm_mon * 100 + t.tm_mday
     hour = t.tm_hour
+
+    del obj['created_at'], obj['content']
+
     obj['timestamp'] = calendar.timegm(t)
-    obj['partition'] = 'day=%d/hour=%02d' % (day, hour)
+    obj['session_id'] = struct.unpack('>i', bytes.fromhex(obj['session_id']))[0]
+
     if 'ext_user_id' not in obj.keys():
         obj['ext_user_id'] = 0
-    del obj['created_at'], obj['content']
+
+    obj['partition'] = 'day=%d/hour=%02d' % (day, hour)
+
     return obj
 
 def printJSONFail(m, val):
