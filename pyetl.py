@@ -79,7 +79,7 @@ envvars['file_partition_field'] = ['day', False, 'str']
 envvars['file_partmaxage'] = ['600', False, 'int']
 envvars['file_unknownpart'] = ['unknown', False, 'str']
 envvars['file_table_base'] = ['', True, 'str']
-envvars['file_tmp_part_dir'] = ['.tmp', False, 'str']
+envvars['file_tmp_dir'] = ['/tmp', False, 'str']
 envvars['file_write_live'] = [0, False, 'int']
 
 
@@ -101,7 +101,7 @@ def main():
     global loadedenv
     loadedenv = loadenv(envvars)
     if loadedenv['dest_type'] != 'maprdb':
-        loadedenv['tmp_part'] = loadedenv['file_table_base'] + "/" + loadedenv['file_tmp_part_dir']
+        loadedenv['tmp_dir'] = loadedenv['file_tmp_dir']
         loadedenv['uniq_val'] = os.environ[loadedenv['file_uniq_env']]
 
     if loadedenv['debug'] == 1:
@@ -155,8 +155,8 @@ def main():
 
 
     if not loadedenv['dest_type'] == 'maprdb':
-        if not os.path.isdir(loadedenv['tmp_part']):
-            os.makedirs(loadedenv['tmp_part'])
+        if not os.path.isdir(loadedenv['tmp_dir']):
+            os.makedirs(loadedenv['tmp_dir'])
         curfile = loadedenv['uniq_val'] + "_curfile."  + loadedenv['dest_type']
 
 
@@ -297,7 +297,7 @@ def dumpPart(pledger, curtime):
                        print("%s Merging parqfile into to new parquet file" % (datetime.datetime.now()))
                     inparq = ParquetFile(new_file)
                     inparqdf = inparq.to_pandas()
-                    tmp_file = loadedenv['tmp_part'] + "/" + new_file_name
+                    tmp_file = loadedenv['tmp_dir'] + "/" + new_file_name
                     parqwrite(tmp_file, inparqdf, compression=loadedenv['parq_compress'], row_group_offsets=loadedenv['parq_offsets'], has_nulls=loadedenv['parq_has_nulls'])
                     shutil.move(tmp_file, new_file)
                     inparq = None
@@ -347,7 +347,7 @@ def writeFile(dataar, pledger, curfile, curtime, rowcnt, sizecnt, timedelta):
         if loadedenv['file_write_live'] == 1:
             base_dir = loadedenv['file_table_base'] + "/" + part
         else:
-            base_dir = loadedenv['file_table_base'] + "/" + loadedenv['file_tmp_part_dir'] + "/" + part
+            base_dir = loadedenv['file_tmp_dir'] + "/" + part
  
 
 

@@ -58,7 +58,7 @@ export FILE_PARTMAXAGE="30"
 # If the partition field can not be found, use this instead
 export FILE_UNKNOWNPART="unknown"
 # The diretory used for tmp files (in not write live setups, .something works because tools like drill don't query directory starting with .)
-export FILE_TMP_PART_DIR=".tmp"
+export FILE_TMP_DIR="/tmp"
 # Should we write directly to the live directory? Usually not, this causes things querying the data to freak out. 
 export FILE_WRITE_LIVE="0"
 
