@@ -206,7 +206,7 @@ def main():
                 sizecnt += len(json.dumps(jmsg))
                 dataar.append(jmsg)
         elif message.error().code() != KafkaError._PARTITION_EOF:
-            print("MyError: " + message.error())
+            print("MyError: " + message.error().str())
             running = False
             break
 
