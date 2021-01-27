@@ -466,6 +466,9 @@ def costomTransformBPoolCommEnvs(obj):
     if 'ext_user_id' not in obj.keys():
         obj['ext_user_id'] = 0
 
+    if 'password' not in obj.keys():
+        obj['password'] = ''
+
     obj['partition'] = 'day=%d/hour=%02d' % (day, hour)
 
     return obj
